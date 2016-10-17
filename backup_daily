@@ -1,0 +1,49 @@
+#!/bin/bash
+backup_location=("/home/backup/gross_files" "/home/backup/schienen_files");
+HOST='host'
+USER='user'
+PASSWD='pass'
+
+max_number_of_backups=3
+
+function number_of_backups() {
+    echo `find $1"/" -name "*_incre_*.tar.gz" | wc -l`
+}
+
+function oldest_backup() {
+    echo `find $1"/" -name "*_incre_*.tar.gz" | head -1`
+}
+
+for i in "${backup_location[@]}"
+do
+    x=$(number_of_backups $i)
+    while [ $x -gt $max_number_of_backups ]
+    do
+	z=$(oldest_backup $i)
+	rm -rf $z
+	x=$(number_of_backups $i)
+
+    done
+done
+
+schienen_file_name="schienen_files_incre_"`date +%d%m%y`".tar.gz"
+schienen_file_name_full=${backup_location[1]}"/"$schienen_file_name
+
+schienen_db_file_name="schienen_files_db_"`date +%d%m%y`".sql.gz"
+schienen_db_file_name_full=${backup_location[1]}"/"$schienen_db_file_name
+
+gross_file_name="gross_files_incre_"`date +%d%m%y`".tar.gz"
+gross_file_name_full=${backup_location[0]}"/"$gross_file_name
+
+gross_db_file_name="gross_files_db_"`date +%d%m%y`".sql.gz"
+gross_db_file_name_full=${backup_location[0]}"/"$gross_db_file_name
+
+tar -czf $schienen_file_name_full -g ${backup_location[1]}'/schienen_files.snar' /home/schienen --exclude="/home/schienen/cache/*"
+`mysqldump -u user -ppass table_name | gzip > $schienen_db_file_name_full`
+curl -T $schienen_file_name_full "ftp://"$USER":"$PASSWD"@"$HOST"/"$schienen_file_name
+curl -T $schienen_db_file_name_full "ftp://"$USER":"$PASSWD"@"$HOST"/"$schienen_db_file_name
+
+tar -czf $gross_file_name_full -g ${backup_location[0]}'/gross_files.snar' /home/gross --exclude="/home/gross/cache/*"
+`mysqldump -u user -ppass table_name | gzip > $gross_db_file_name_full`
+curl -T $gross_file_name_full "ftp://"$USER":"$PASSWD"@"$HOST"/"$gross_file_name
+curl -T $gross_db_file_name_full "ftp://"$USER":"$PASSWD"@"$HOST"/"$gross_db_file_name

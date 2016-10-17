@@ -1,0 +1,26 @@
+#!/bin/bash
+backup_location=/home/backup
+HOST='host'
+USER='user'
+PASSWD='pass'
+
+
+
+
+rm -r $backup_location'/gross_files.snar'
+rm -r $backup_location'/schienen_files.snar'
+rm -r $backup_location"/gross_files/*.tar.gz"
+rm -r $backup_location"/schienen_files/*.tar.gz"
+
+schienen_file_name="schienen_files_full_"`date +%d%m%y`".tar.gz"
+schienen_file_name_full=$backup_location"/schienen_files/"$schienen_file_name
+gross_file_name="gross_files_full_"`date +%d%m%y`".tar.gz"
+gross_file_name_full=$backup_location"/gross_files/"$gross_file_name
+
+tar -czf $schienen_file_name_full -g $backup_location'/schienen_files/schienen_files.snar' /home/schienen --exclude="/home/schienen/cache/*"
+curl -T $schienen_file_name_full "ftp://"$USER":"$PASSWD"@"$HOST"/"$schienen_file_name
+
+tar -czf $gross_file_name_full -g $backup_location'/gross_files/gross_files.snar' /home/gross --exclude="/home/gross/cache/*"
+curl -T $gross_file_name_full "ftp://"$USER":"$PASSWD"@"$HOST"/"$gross_file_name
+
+
